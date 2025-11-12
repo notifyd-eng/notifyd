@@ -1,0 +1,8 @@
+notifyd
+*.db
+*.db-journal
+dist/
+coverage.out
+.env
+*.log
+.DS_Store
