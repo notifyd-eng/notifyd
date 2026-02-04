@@ -1,0 +1,199 @@
+openapi: "3.0.3"
+info:
+  title: notifyd API
+  version: "1.0.0"
+  description: Notification delivery daemon API
+
+servers:
+  - url: http://localhost:8400
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/notifications:
+    post:
+      summary: Create a notification
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateNotification"
+      responses:
+        "201":
+          description: Notification created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+        "400":
+          description: Invalid request
+
+    get:
+      summary: List notifications
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [email, slack, webhook, sms]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, sent, failed, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Notification"
+                  count:
+                    type: integer
+
+  /api/v1/notifications/{id}:
+    get:
+      summary: Get notification by ID
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        "404":
+          description: Not found
+
+    delete:
+      summary: Cancel a pending notification
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification cancelled
+        "404":
+          description: Not found
+        "409":
+          description: Cannot cancel non-pending notification
+
+  /api/v1/stats:
+    get:
+      summary: Get delivery statistics
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Counts by status
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    CreateNotification:
+      type: object
+      required: [channel, recipient, body]
+      properties:
+        channel:
+          type: string
+          enum: [email, slack, webhook, sms]
+        recipient:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        priority:
+          type: integer
+          default: 0
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+        channel:
+          type: string
+        recipient:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        priority:
+          type: integer
+        status:
+          type: string
+        attempts:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
