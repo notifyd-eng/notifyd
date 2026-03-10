@@ -1,4 +1,4 @@
-name: Heartbeat
+name: Sync
 
 on:
   schedule:
@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  ping:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Healthcheck
+      - name: Validate config
         run: echo "ok"
